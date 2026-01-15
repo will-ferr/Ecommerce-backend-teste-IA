@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type ErrorCode string
@@ -124,9 +125,9 @@ func (e *AppError) ToHTTPStatus() int {
 }
 
 func getCurrentTimestamp() string {
-	return fmt.Sprintf("%d", getCurrentTimestampMillis())
+	return fmt.Sprintf("%d", time.Now().UnixMilli())
 }
 
 func getCurrentTimestampMillis() int64 {
-	return 0 // Placeholder - should use time.Now().UnixMilli()
+	return time.Now().UnixMilli()
 }
