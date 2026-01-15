@@ -43,7 +43,14 @@ func WithRequestContext(ctx context.Context, reqCtx *RequestContext, userID uint
 }
 
 func (c *AppContext) WithTimeout(timeout time.Duration) *AppContext {
-	ctx, _ := context.WithTimeout(c.Context, timeout)
+	ctx, cancel := context.WithTimeout(c.Context, timeout)
+
+	// Store cancel function for potential cleanup
+	go func() {
+		<-ctx.Done()
+		cancel()
+	}()
+
 	return &AppContext{
 		Context:   ctx,
 		RequestID: c.RequestID,
