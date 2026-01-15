@@ -1,0 +1,455 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Smart Choice E-commerce API
+  description: A comprehensive e-commerce backend with authentication, products, orders, and payment processing
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: Smart Choice Team
+    url: https://github.com/will-ferr/Ecommerce-backend-teste-IA
+    email: support@smartchoice.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.smartchoice.com
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the application
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Application is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Application is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /ready:
+    get:
+      summary: Readiness check endpoint
+      description: Returns the readiness status of the application
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Application is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          description: Application is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+
+  /alive:
+    get:
+      summary: Liveness check endpoint
+      description: Returns the liveness status of the application
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Application is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LivenessResponse'
+
+  /auth/register:
+    post:
+      summary: Register a new user
+      description: Creates a new user account
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      summary: User login
+      description: Authenticates a user and returns a JWT token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/products:
+    get:
+      summary: Get all products
+      description: Returns a list of all products
+      tags:
+        - Products
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create a new product
+      description: Creates a new product (admin only)
+      tags:
+        - Products
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden (admin only)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/products/{id}:
+    get:
+      summary: Get a product by ID
+      description: Returns a specific product
+      tags:
+        - Products
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Product ID
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+          example: 1.0.0
+        uptime:
+          type: string
+          example: 2h30m45s
+        checks:
+          type: object
+          properties:
+            database:
+              type: string
+              example: healthy
+            services:
+              type: object
+        system:
+          $ref: '#/components/schemas/SystemInfo'
+
+    ReadinessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ready
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+
+    LivenessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: alive
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: string
+          example: 2h30m45s
+
+    SystemInfo:
+      type: object
+      properties:
+        os:
+          type: string
+          example: linux
+        architecture:
+          type: string
+          example: amd64
+        num_cpu:
+          type: integer
+          example: 4
+        num_goroutine:
+          type: integer
+          example: 25
+        memory_usage:
+          $ref: '#/components/schemas/MemoryInfo'
+
+    MemoryInfo:
+      type: object
+      properties:
+        alloc:
+          type: integer
+          format: uint64
+          example: 1048576
+        total_alloc:
+          type: integer
+          format: uint64
+          example: 10485760
+        sys:
+          type: integer
+          format: uint64
+          example: 20971520
+        num_gc:
+          type: integer
+          format: uint32
+          example: 5
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          minLength: 6
+          example: password123
+        name:
+          type: string
+          example: John Doe
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          example: password123
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          example: user@example.com
+        name:
+          type: string
+          example: John Doe
+        created_at:
+          type: string
+          format: date-time
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Smartphone
+        description:
+          type: string
+          example: Latest smartphone with advanced features
+        price:
+          type: number
+          format: float
+          example: 999.99
+        stock:
+          type: integer
+          example: 50
+        category:
+          type: string
+          example: electronics
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateProductRequest:
+      type: object
+      required:
+        - name
+        - price
+        - stock
+        - category
+      properties:
+        name:
+          type: string
+          example: Smartphone
+        description:
+          type: string
+          example: Latest smartphone with advanced features
+        price:
+          type: number
+          format: float
+          minimum: 0
+          example: 999.99
+        stock:
+          type: integer
+          minimum: 0
+          example: 50
+        category:
+          type: string
+          example: electronics
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Bad request
+        code:
+          type: string
+          example: VALIDATION_FAILED
+        message:
+          type: string
+          example: Invalid input data
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: email
+              message:
+                type: string
+                example: Invalid email format
+              value:
+                type: string
+                example: invalid-email

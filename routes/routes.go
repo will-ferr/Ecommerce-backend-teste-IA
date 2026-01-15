@@ -7,12 +7,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func SetupRoutes(r *gin.Engine) {
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "healthy"})
-	})
+	// Enhanced health checks
+	r.GET("/health", controllers.HealthCheck)
+	r.GET("/ready", controllers.ReadinessCheck)
+	r.GET("/alive", controllers.LivenessCheck)
+
+	// Swagger documentation
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
