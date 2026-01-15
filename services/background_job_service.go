@@ -71,17 +71,20 @@ func (q *RedisJobQueue) Enqueue(ctx context.Context, job Job) error {
 }
 
 func (q *RedisJobQueue) Dequeue(ctx context.Context) (*Job, error) {
-	result, err := q.client.BRPop(ctx, "job_queue", 10*time.Second).Result()
+	result, err := q.client.BRPop(ctx, 10*time.Second, "job_queue").Result()
 	if err != nil {
 		return nil, err
 	}
 
-	if result == nil {
+	if len(result) == 0 {
 		return nil, nil // No jobs available
 	}
 
+	// BRPop returns [key, value], so we need the second element
+	jobData := result[1]
+
 	var job Job
-	if err := json.Unmarshal([]byte(result), &job); err != nil {
+	if err := json.Unmarshal([]byte(jobData), &job); err != nil {
 		return nil, err
 	}
 
@@ -90,7 +93,7 @@ func (q *RedisJobQueue) Dequeue(ctx context.Context) (*Job, error) {
 
 func (q *RedisJobQueue) Complete(ctx context.Context, jobID string) error {
 	// Remove from processing queue
-	return q.client.LRem(ctx, "processing_jobs", jobID).Err()
+	return q.client.LRem(ctx, "processing_jobs", 0, jobID).Err()
 }
 
 func (q *RedisJobQueue) Fail(ctx context.Context, jobID string, reason string) error {

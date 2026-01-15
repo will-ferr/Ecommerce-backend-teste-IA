@@ -11,7 +11,7 @@ import (
 const (
 	APIVersionV1   = "v1"
 	APIVersionV2   = "v2"
-	CurrentVersion = APIVersionV1
+	CurrentVersion = APIVersionV2
 )
 
 type APIVersion struct {
@@ -37,7 +37,7 @@ func (h *DefaultVersionHandler) GetVersionInfo(version string) *APIVersion {
 
 	switch version {
 	case APIVersionV1:
-		info.Deprecated = false
+		info.Deprecated = true
 	case APIVersionV2:
 		info.Deprecated = false
 	}
@@ -61,6 +61,10 @@ func (h *DefaultVersionHandler) GetMigrationPath(version, from, to string) strin
 	return fmt.Sprintf("/migrate/%s", from)
 }
 
+func GetVersionHandler() VersionHandler {
+	return &DefaultVersionHandler{}
+}
+
 func APIVersionMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		version := extractVersionFromPath(c.Request.URL.Path)
@@ -71,7 +75,6 @@ func APIVersionMiddleware() gin.HandlerFunc {
 }
 
 func extractVersionFromPath(path string) string {
-	// Extract version from path like /v1/products or /v2/orders
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 	if len(parts) > 0 && strings.HasPrefix(parts[0], "v") {
 		return parts[0]
